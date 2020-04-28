@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<property name="log.base" value="../../logs" />
+
+    <appender name="mqAppender" class="org.apache.rocketmq.logappender.logback.RocketmqLogbackAppender">
+        <tag>*</tag>
+        <topic>log-topic</topic>
+        <producerGroup>LogGroup</producerGroup>
+        <nameServerAddress>127.0.0.1:9876</nameServerAddress>
+        <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
+            <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter">
+                <!-- <prettyPrint>true</prettyPrint> -->
+            </jsonFormatter>
+            <timestampFormat>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</timestampFormat>
+            <includeContextName>false</includeContextName>
+            <appendLineSeparator>true</appendLineSeparator>
+        </layout>
+    </appender>
+
+    <appender name="mqAsyncAppender" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>1024</queueSize>
+        <discardingThreshold>80</discardingThreshold>
+        <maxFlushTime>2000</maxFlushTime>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="mqAppender"/>
+    </appender>
+
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- 此日志appender是为开发使用，只配置最底级别，控制台输出的日志级别是大于或等于此级别的日志信息 -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>debug</level>
+        </filter>
+        <encoder>
+            <Pattern>%date %p %t %logger - %m%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="info_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 正在记录的日志文件的路径及文件名 -->
+        <file>${log.base}/mid_log.log</file>
+        <!--日志文件输出格式-->
+        <encoder>
+            <pattern>%date %p %t %logger - %m%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 日志记录器的滚动策略，按日期，按大小记录 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- 每天日志归档路径以及格式 -->
+            <fileNamePattern>${log.base}/info/mid_log_%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <!--日志文件保留天数-->
+            <!-- <maxHistory>15</maxHistory> -->
+        </rollingPolicy>
+        <!-- 此日志文件只记录info级别的
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>info</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter> -->
+    </appender>
+	
+	<root level="info">
+        <appender-ref ref="console" />     
+        <appender-ref ref="info_file" />
+        <appender-ref ref="mqAsyncAppender"/>
+    </root>
+
+    <logger name="com.example" level="info">
+        <appender-ref ref="mqAsyncAppender"/>
+    </logger>
+
+</configuration>
